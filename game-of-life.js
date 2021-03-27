@@ -8,6 +8,7 @@ const cellSize = 6;
 const margin = 1;
 const framesPerStep = 5;
 
+
 class GameOfLife {
     constructor(id) {
         this.canvas = document.getElementById(id);
@@ -22,8 +23,9 @@ class GameOfLife {
         this.run = this.run.bind(this);
         
         this.world = matrix(this.width, this.height, "r");
-        
         this.sinceStep = 0;
+
+        this.gpu = new GPU(this.canvas);
     }
 
     step() {
@@ -74,6 +76,23 @@ class GameOfLife {
         }
     }
 
+    gpuRender() {
+        const renderFrame = this.gpu.createKernel(function(world, width, height, cellSize, margin) {
+            var cellx = Math.floor(this.thread.x / cellSize);
+            var celly = Math.floor(this.thread.y / cellSize);
+            if (world[celly][cellx] == 1 && this.thread.x - cellx*cellSize > margin-1 && this.thread.y - celly*cellSize > margin-1) {
+                this.color((cellx/width*0.75+0.25), (celly/height*0.75+0.25), 0.75, 1);
+            }
+            else {
+                this.color(0.0045, 0.0045, 0.008, 1);
+            }
+        }).setOutput([this.canvas.width, this.canvas.height])
+        .setGraphical(true);
+
+        renderFrame(this.world, this.width, this.height, cellSize, margin);
+        this.ctx.putImageData(new ImageData(renderFrame.getPixels(), this.canvas.width), 0, 0);
+    }
+
     run() {
         this.sinceStep++;
         if (this.sinceStep >= framesPerStep) {
@@ -84,7 +103,8 @@ class GameOfLife {
             this.world[5][h] = true;
             this.world[7][m] = true;
             */
-            this.render();
+            //this.render();
+            this.gpuRender();
         }
         window.requestAnimationFrame(this.run);
     }
