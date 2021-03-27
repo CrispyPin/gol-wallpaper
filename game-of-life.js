@@ -10,8 +10,9 @@ class GameOfLife {
         this.canvas = this.app.getElementsByTagName("canvas")[0];
         this.ctx = this.canvas.getContext("2d");
 
-        var width = Math.floor(this.canvas.clientWidth / cellSize);
-        var height = Math.floor(1.2 * this.canvas.clientHeight / cellSize);
+        var width = Math.floor(window.innerWidth / cellSize);
+        //var height = Math.floor(1.2 * this.canvas.clientHeight / cellSize);
+        var height =  Math.floor(window.innerHeight / cellSize);
 
         this.canvas.width = width * cellSize;
         this.canvas.height = height * cellSize;
