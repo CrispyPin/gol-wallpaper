@@ -79,6 +79,11 @@ class GameOfLife {
         if (this.sinceStep >= framesPerStep) {
             this.sinceStep = 0;
             this.step();
+            /*var h = new Date().getMinutes()
+            var m = new Date().getSeconds()
+            this.world[5][h] = true;
+            this.world[7][m] = true;
+            */
             this.render();
         }
         window.requestAnimationFrame(this.run);
