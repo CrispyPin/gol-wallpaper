@@ -11,7 +11,7 @@ class GameOfLife {
         this.ctx = this.canvas.getContext("2d");
 
         var width = Math.floor(this.canvas.clientWidth / cellSize);
-        var height = Math.floor(this.canvas.clientHeight / cellSize);
+        var height = Math.floor(1.2 * this.canvas.clientHeight / cellSize);
 
         this.canvas.width = width * cellSize;
         this.canvas.height = height * cellSize;
