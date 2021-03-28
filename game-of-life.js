@@ -89,8 +89,8 @@ class GameOfLife {
             const celly = Math.floor((this.thread.y) / cellSize);
             var col = [(cellx/width * 0.75 + 0.25), (celly/height * 0.75 + 0.25), 0.75];
             col *= world[celly+1][cellx+1];
-            col *= Math.sign(this.thread.x - cellx*cellSize - margin+1);
-            col *= Math.sign(this.thread.y - celly*cellSize - margin+1);
+            col *= Math.max(Math.sign(this.thread.x - cellx*cellSize - margin+1), 0);
+            col *= Math.max(Math.sign(this.thread.y - celly*cellSize - margin+1), 0);
             col[0] += 0.045;
             col[1] += 0.045;
             col[2] += 0.08;
