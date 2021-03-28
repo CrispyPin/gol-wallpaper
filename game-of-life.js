@@ -6,7 +6,7 @@ const ny = [-1, -1, -1, 0, 0, 1, 1, 1];
 
 const cellSize = 6;
 const margin = 1;
-const framesPerStep = 5;
+const framesPerStep = 1;
 
 const gpu = new GPU();
 
@@ -15,11 +15,11 @@ class GameOfLife {
         this.canvas = document.getElementById(id);
         this.ctx = this.canvas.getContext("2d");
 
-        this.width = Math.floor(window.innerWidth / cellSize);
-        this.height =  Math.floor(window.innerHeight / cellSize);
+        this.width = Math.floor(window.innerWidth / cellSize) + 2;
+        this.height =  Math.floor(window.innerHeight / cellSize) + 2;
 
-        this.canvas.width = this.width * cellSize;
-        this.canvas.height = this.height * cellSize;
+        this.canvas.width = (this.width-2) * cellSize;
+        this.canvas.height = (this.height-2) * cellSize;
 
         this.run = this.run.bind(this);
         
@@ -28,8 +28,8 @@ class GameOfLife {
 
         this.renderWorld = gpu.createKernel(function(world, width, height, cellSize, margin) {
             var cellx = Math.floor(this.thread.x / cellSize);
-            var celly = Math.floor(this.thread.y / cellSize);
-            if (world[celly][cellx] == 1 && this.thread.x - cellx*cellSize > margin-1 && this.thread.y - celly*cellSize > margin-1) {
+            var celly = Math.floor((this.thread.y) / cellSize);
+            if (world[celly+1][cellx+1] == 1 && this.thread.x - cellx*cellSize > margin-1 && this.thread.y - celly*cellSize > margin-1) {
                 this.color((cellx/width*0.75+0.25), (celly/height*0.75+0.25), 0.75, 1);
             }
             else {
@@ -125,9 +125,21 @@ class GameOfLife {
             this.world[5][h] = true;
             this.world[7][m] = true;
             */
+            this.randomEdges(0.3);
             this.gpuRender();
         }
         window.requestAnimationFrame(this.run);
+    }
+
+    randomEdges(weight=0.4) {
+        for (let x = 0; x < this.width; x++) {
+            this.world[0][x] = Math.random() < weight;
+            this.world[this.height - 1][x] = Math.random() < weight;
+        }
+        for (let y = 0; y < this.height; y++) {
+            this.world[y][0] = Math.random() < weight;
+            this.world[y][this.width - 1] = Math.random() < weight;
+        }
     }
 }
 
