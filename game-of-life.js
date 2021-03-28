@@ -160,8 +160,8 @@ class GameOfLife {
         this.char(posx-5, posy, (m.length==2 ? m[0] : "0"));
         this.char(posx, posy, (m.length==2 ? m[1] : m));
 
-        this.char(posx+6, posy, (s.length==2 ? s[0] : "0"));
-        this.char(posx+11, posy, (s.length==2 ? s[1] : s));
+        this.char(posx+7, posy, (s.length==2 ? s[0] : "0"));
+        this.char(posx+12, posy, (s.length==2 ? s[1] : s));
     }
 
     char(posx, posy, c) {
