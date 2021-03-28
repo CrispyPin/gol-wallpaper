@@ -6,7 +6,7 @@ const ny = [-1, -1, -1, 0, 0, 1, 1, 1];
 
 const cellSize = 6;
 const margin = 1;
-const framesPerStep = 1;
+const framesPerStep = 4;
 
 const gpu = new GPU();
 
@@ -27,14 +27,16 @@ class GameOfLife {
         this.sinceStep = 0;
 
         this.renderWorld = gpu.createKernel(function(world, width, height, cellSize, margin) {
-            var cellx = Math.floor(this.thread.x / cellSize);
-            var celly = Math.floor((this.thread.y) / cellSize);
-            if (world[celly+1][cellx+1] == 1 && this.thread.x - cellx*cellSize > margin-1 && this.thread.y - celly*cellSize > margin-1) {
-                this.color((cellx/width*0.75+0.25), (celly/height*0.75+0.25), 0.75, 1);
-            }
-            else {
-                this.color(0.0045, 0.0045, 0.008, 1);
-            }
+            const cellx = Math.floor(this.thread.x / cellSize);
+            const celly = Math.floor((this.thread.y) / cellSize);
+            var col = [(cellx/width * 0.75 + 0.25), (celly/height * 0.75 + 0.25), 0.75];
+            col *= world[celly+1][cellx+1];
+            col *= Math.sign(this.thread.x - cellx*cellSize - margin+1);
+            col *= Math.sign(this.thread.y - celly*cellSize - margin+1);
+            col[0] += 0.045;
+            col[1] += 0.045;
+            col[2] += 0.08;
+            this.color(col[0], col[1], col[2], 1);
         }, {output: [this.canvas.width, this.canvas.height], graphical: true});
 
         this.logicKernel = gpu.createKernel(function(world, width, height, nx, ny) {
@@ -43,18 +45,14 @@ class GameOfLife {
             for (let i = 0; i < 8; i++) {
                 const xp = this.thread.x + nx[i];
                 const yp = this.thread.y + ny[i];
-                if (xp < width && xp >= 0 && yp < height && yp >= 0) {
-                    if (world[yp][xp] == 1) {
-                        n++;
-                    }
+                if (xp < width && xp >= 0 && yp < height && yp >= 0 && world[yp][xp] == 1) {
+                    n++;
                 }
             }
             if (world[this.thread.y][this.thread.x] == 1) {
-                if (n > 1 && n < 4) return 1;
-                return 0;
+                return (n > 1 && n < 4) ? 1 : 0;
             }
-            if (n == 3) return 1;
-            return 0;
+            return n == 3 ? 1 : 0;
         }, {output: [this.width, this.height]});
     }
 
