@@ -8,6 +8,7 @@ const cellSize = 6;
 const margin = 1;
 const framesPerStep = 5;
 
+const gpu = new GPU();
 
 class GameOfLife {
     constructor(id) {
@@ -25,10 +26,39 @@ class GameOfLife {
         this.world = matrix(this.width, this.height, "r");
         this.sinceStep = 0;
 
-        this.gpu = new GPU(this.canvas);
+        this.renderWorld = gpu.createKernel(function(world, width, height, cellSize, margin) {
+            var cellx = Math.floor(this.thread.x / cellSize);
+            var celly = Math.floor(this.thread.y / cellSize);
+            if (world[celly][cellx] == 1 && this.thread.x - cellx*cellSize > margin-1 && this.thread.y - celly*cellSize > margin-1) {
+                this.color((cellx/width*0.75+0.25), (celly/height*0.75+0.25), 0.75, 1);
+            }
+            else {
+                this.color(0.0045, 0.0045, 0.008, 1);
+            }
+        }, {output: [this.canvas.width, this.canvas.height], graphical: true});
+
+        this.logicKernel = gpu.createKernel(function(world, width, height, nx, ny) {
+            let n = 0;
+            //count neighbors
+            for (let i = 0; i < 8; i++) {
+                const xp = this.thread.x + nx[i];
+                const yp = this.thread.y + ny[i];
+                if (xp < width && xp >= 0 && yp < height && yp >= 0) {
+                    if (world[yp][xp] == 1) {
+                        n++;
+                    }
+                }
+            }
+            if (world[this.thread.y][this.thread.x] == 1) {
+                if (n > 1 && n < 4) return 1;
+                return 0;
+            }
+            if (n == 3) return 1;
+            return 0;
+        }, {output: [this.width, this.height]});
     }
 
-    step() {
+    cpuStep() {
         let newWorld = matrix(this.width, this.height);
         let neighbors = matrix(this.width, this.height, 0);
         
@@ -65,19 +95,10 @@ class GameOfLife {
     }
     
     gpuStep() {
-        const renderFrame = this.gpu.createKernel(function(world, width, height, cellSize, margin) {
-            var cellx = Math.floor(this.thread.x / cellSize);
-            var celly = Math.floor(this.thread.y / cellSize);
-            if (world[celly][cellx] == 1 && this.thread.x - cellx*cellSize > margin-1 && this.thread.y - celly*cellSize > margin-1) {
-                this.color((cellx/width*0.75+0.25), (celly/height*0.75+0.25), 0.75, 1);
-            }
-            else {
-                this.color(0.0045, 0.0045, 0.008, 1);
-            }
-        }).setOutput([this.canvas.width, this.canvas.height])
+        this.world = this.logicKernel(this.world, this.width, this.height, nx, ny);
     }
 
-    render() {
+    cpuRender() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
@@ -90,34 +111,20 @@ class GameOfLife {
     }
 
     gpuRender() {
-        const renderFrame = this.gpu.createKernel(function(world, width, height, cellSize, margin) {
-            var cellx = Math.floor(this.thread.x / cellSize);
-            var celly = Math.floor(this.thread.y / cellSize);
-            if (world[celly][cellx] == 1 && this.thread.x - cellx*cellSize > margin-1 && this.thread.y - celly*cellSize > margin-1) {
-                this.color((cellx/width*0.75+0.25), (celly/height*0.75+0.25), 0.75, 1);
-            }
-            else {
-                this.color(0.0045, 0.0045, 0.008, 1);
-            }
-        }).setOutput([this.canvas.width, this.canvas.height])
-        .setGraphical(true);
-
-        renderFrame(this.world, this.width, this.height, cellSize, margin);
-        this.ctx.putImageData(new ImageData(renderFrame.getPixels(), this.canvas.width), 0, 0);
-        renderFrame.destroy();
+        this.renderWorld(this.world, this.width, this.height, cellSize, margin);
+        this.ctx.putImageData(new ImageData(this.renderWorld.getPixels(), this.canvas.width), 0, 0);
     }
 
     run() {
         this.sinceStep++;
         if (this.sinceStep >= framesPerStep) {
             this.sinceStep = 0;
-            this.step();
+            this.gpuStep();
             /*var h = new Date().getMinutes()
             var m = new Date().getSeconds()
             this.world[5][h] = true;
             this.world[7][m] = true;
             */
-            //this.render();
             this.gpuRender();
         }
         window.requestAnimationFrame(this.run);
