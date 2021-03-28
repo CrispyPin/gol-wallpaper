@@ -4,9 +4,66 @@
 const nx = [-1, 0, 1, -1, 1, -1, 0, 1];
 const ny = [-1, -1, -1, 0, 0, 1, 1, 1];
 
-const cellSize = 6;
-const margin = 1;
-const framesPerStep = 4;
+//settings
+let params = new URLSearchParams(location.search);
+
+const cellSize = params.get('cellsize') != null ? params.get("cellsize") | 0 : 5;
+const margin = params.get('margin') != null ? params.get("margin") | 0 : 1;
+const framesPerStep = params.get('fps') != null ? params.get("fps") | 0 : 5;
+
+const chars = {
+    "0": [" ## ",
+        "#  #",
+        "#  #",
+        "#  #",
+        " ## "],
+    "1": ["  # ",
+        " ## ",
+        "  # ",
+        "  # ",
+        " ###"],
+    "2": [" ## ",
+        "#  #",
+        "  # ",
+        " #  ",
+        "####"],
+    "3": ["### ",
+        "   #",
+        " ## ",
+        "   #",
+        "### "],
+    "4": ["#  #",
+        "#  #",
+        "####",
+        "   #",
+        "   #"],
+    "5": ["####",
+        "#   ",
+        "### ",
+        "   #",
+        "### "],
+    "6": [" ## ",
+        "#   ",
+        "### ",
+        "#  #",
+        " ## "],
+    "7": ["####",
+        "   #",
+        "  # ",
+        " #  ",
+        " #  "],
+    "8": [" ## ",
+        "#  #",
+        " ## ",
+        "#  #",
+        " ## "],
+    "9": [" ## ",
+        "#  #",
+        " ###",
+        "   #",
+        " ## "]
+};
+
 
 const gpu = new GPU();
 
@@ -23,7 +80,7 @@ class GameOfLife {
 
         this.run = this.run.bind(this);
         
-        this.world = matrix(this.width, this.height, "r");
+        this.world = matrix(this.width, this.height, "r",0);
         this.sinceStep = 0;
 
         this.renderWorld = gpu.createKernel(function(world, width, height, cellSize, margin) {
@@ -45,9 +102,7 @@ class GameOfLife {
             for (let i = 0; i < 8; i++) {
                 const xp = this.thread.x + nx[i];
                 const yp = this.thread.y + ny[i];
-                if (xp < width && xp >= 0 && yp < height && yp >= 0 && world[yp][xp] == 1) {
-                    n++;
-                }
+                n += (xp < width && xp >= 0 && yp < height && yp >= 0 && world[yp][xp] == 1) ? 1 : 0;
             }
             if (world[this.thread.y][this.thread.x] == 1) {
                 return (n > 1 && n < 4) ? 1 : 0;
@@ -71,6 +126,7 @@ class GameOfLife {
             this.sinceStep = 0;
             this.step();
             this.randomEdges(0.3);
+            this.clock();
             this.render();
         }
         window.requestAnimationFrame(this.run);
@@ -84,6 +140,32 @@ class GameOfLife {
         for (let y = 0; y < this.height; y++) {
             this.world[y][0] = Math.random() < weight;
             this.world[y][this.width - 1] = Math.random() < weight;
+        }
+    }
+
+    clock() {
+        const posx = Math.floor(this.width/2);
+        const posy = this.height - 16;
+        const time = new Date();
+        const h = time.getHours().toString();
+        const m = time.getMinutes().toString();
+        const s = time.getSeconds().toString();
+        this.char(posx-17, posy, (h.length==2 ? h[0] : "0"));
+        this.char(posx-12, posy, (h.length==2 ? h[1] : h));
+        
+        this.char(posx-5, posy, (m.length==2 ? m[0] : "0"));
+        this.char(posx, posy, (m.length==2 ? m[1] : m));
+
+        this.char(posx+6, posy, (s.length==2 ? s[0] : "0"));
+        this.char(posx+11, posy, (s.length==2 ? s[1] : s));
+    }
+
+    char(posx, posy, c) {
+        for (let y = 0; y < chars[c].length; y++) {
+            const row = chars[c][chars[c].length - y-1];
+            for (let x = 0; x < row.length; x++) {
+                this.world[posy + y][posx + x] = row[x]=="#";
+            }
         }
     }
 }
