@@ -55,60 +55,12 @@ class GameOfLife {
             return n == 3 ? 1 : 0;
         }, {output: [this.width, this.height]});
     }
-
-    cpuStep() {
-        let newWorld = matrix(this.width, this.height);
-        let neighbors = matrix(this.width, this.height, 0);
-        
-        //count neighbors
-        for (let y = 0; y < this.height; y++) {
-            for (let x = 0; x < this.width; x++) {
-                if (this.world[y][x]) {
-                    //add to neighbor count of all surrounding cells
-                    for (let pos = 0; pos < 8; pos++) {
-                        let xp = x+nx[pos];
-                        let yp = y+ny[pos];
-                        if (xp < this.width && xp >= 0 && yp < this.height && yp >= 0) {
-                            neighbors[yp][xp]++;
-                        }
-                    }
-                }
-            }
-        }
     
-        //update state
-        for (let y = 0; y < this.height; y++) {
-            for (let x = 0; x < this.width; x++) {
-                newWorld[y][x] = this.newState(this.world[y][x], neighbors[y][x]);
-            }
-        }
-        this.world = newWorld;
-    }
-
-    newState(state, neighbors) {
-        if (state) {
-            return (neighbors > 1 && neighbors < 4);
-        }
-        return neighbors == 3;
-    }
-    
-    gpuStep() {
+    step() {
         this.world = this.logicKernel(this.world, this.width, this.height, nx, ny);
     }
 
-    cpuRender() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        for (let y = 0; y < this.height; y++) {
-            for (let x = 0; x < this.width; x++) {
-                if (this.world[y][x]) {
-                    this.ctx.fillStyle = "rgb("+(x/this.width*192+64) + "," + (y/this.height*192+64) +",192)";
-                    this.ctx.fillRect(x * cellSize, y * cellSize, cellSize - margin, cellSize - margin);
-                }
-            }
-        }
-    }
-
-    gpuRender() {
+    render() {
         this.renderWorld(this.world, this.width, this.height, cellSize, margin);
         this.ctx.putImageData(new ImageData(this.renderWorld.getPixels(), this.canvas.width), 0, 0);
     }
@@ -117,14 +69,9 @@ class GameOfLife {
         this.sinceStep++;
         if (this.sinceStep >= framesPerStep) {
             this.sinceStep = 0;
-            this.gpuStep();
-            /*var h = new Date().getMinutes()
-            var m = new Date().getSeconds()
-            this.world[5][h] = true;
-            this.world[7][m] = true;
-            */
+            this.step();
             this.randomEdges(0.3);
-            this.gpuRender();
+            this.render();
         }
         window.requestAnimationFrame(this.run);
     }
