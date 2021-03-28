@@ -7,10 +7,11 @@ const ny = [-1, -1, -1, 0, 0, 1, 1, 1];
 //settings
 let params = new URLSearchParams(location.search);
 
-const cellSize = params.get('cellsize') != null ? params.get("cellsize") | 0 : 5;
-const margin = params.get('margin') != null ? params.get("margin") | 0 : 1;
-const framesPerStep = params.get('fps') != null ? params.get("fps") | 0 : 5;
-const useClock = params.get('clock') == "true";
+const cellSize = params.get("cellsize") != null ? params.get("cellsize") | 0 : 5;
+const margin = params.get("margin") != null ? params.get("margin") | 0 : 1;
+const framesPerStep = params.get("fps") != null ? params.get("fps") | 0 : 5;
+const useClock = params.get("clock") == "true";
+const populate = params.get("populate") == "true";
 
 const chars = {
     "0": [" ## ",
@@ -81,7 +82,7 @@ class GameOfLife {
 
         this.run = this.run.bind(this);
         
-        this.world = matrix(this.width, this.height, "r",0);
+        this.world = matrix(this.width, this.height, "r", populate ? 0.3 : 0);
         this.sinceStep = 0;
 
         this.renderWorld = gpu.createKernel(function(world, width, height, cellSize, margin) {
