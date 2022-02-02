@@ -10,6 +10,7 @@ let params = new URLSearchParams(location.search);
 const cellSize = params.get("cellsize") != null ? params.get("cellsize") | 0 : 5;
 const margin = params.get("margin") != null ? params.get("margin") | 0 : 1;
 const framesPerStep = params.get("time") != null ? params.get("time") | 0 : 4;
+const edgeWeight = params.get("edges") != null ? params.get("time") | 0 : 0.3;
 const useClock = params.get("clock") == "true";
 const populate = params.get("populate") == "true";
 
@@ -127,7 +128,7 @@ class GameOfLife {
         if (this.sinceStep >= framesPerStep) {
             this.sinceStep = 0;
             this.step();
-            this.randomEdges(0.3);
+            this.randomEdges(edgeWeight);
             if (useClock) {
                 this.clock();
             }

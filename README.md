@@ -12,3 +12,4 @@ The full list of options follows:
 * `margin`: the width of the grid (subtracted from cellsize)
 * `clock`: if true, shows a digital clock that interacts with the simulation
 * `populate`: if true, starts the board with 30% of cells alive
+* `edgeWeight`: random weight of edges, defaults to 0.3
